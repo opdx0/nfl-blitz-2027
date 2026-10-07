@@ -1,0 +1,4 @@
+out/
+*.chd
+*.raw
+.DS_Store

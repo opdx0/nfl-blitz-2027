@@ -1,0 +1,8 @@
+NFL Blitz 2027 patch (@PLATFORM@)   release @RELEASE@
+
+Install steps: see https://github.com/opdx0/nfl-blitz-2027#installation
+
+Expected result: the patched blitz2k.chd must show PASS and a "Data SHA1" of
+  @TARGET_DATA_SHA1@
+
+Licences: see LICENSES.txt (patcher and patch; bundled unmodified chdman from MAME 0.289, GPL v2+).
