@@ -15,7 +15,7 @@ MAME set blitz2k, *NFL Blitz 2000 Gold Edition (ver 1.2, Sep 22 1999)*:
 
 Only the CHD changes; keep your blitz2k.zip as is. Check yours with `chdman info -i blitz2k.chd` (the SHA1 line) and `mame -verifyroms blitz2k`. This repository holds the patcher and the tooling that builds the downloads.
 
-Current release: **v1.0.0** (build 1006a)
+Current release: **v1.0.1** (build 1007a)
 
 ## What's new since the original game
 - **32 teams.** The Houston Texans join with their own roster, ratings, helmets, uniforms, end zone, wordmark and announcer bank.
@@ -46,16 +46,16 @@ Takes 2 to 10 minutes depending on your system and needs about 13 GB of temporar
    - **macOS:** double-click PATCH.command. The patch's programs are not notarized; see the macOS note under Notes below.
    - **Linux:** run ./patch.sh. x86-64 and arm64 are both in the one zip and the right one is selected automatically. Set CHDMAN=/path/to/chdman to use your own chdman.
 3. Wait for **PASS**. The patch folder now holds the patched blitz2k.chd and your untouched original as blitz2k.chd.original (keep it; you need it for future versions). Copy the new blitz2k.chd into your MAME rompath's blitz2k folder, next to your unmodified blitz2k.zip, replacing the old one.
+4. Delete any old diff file for the game (see Notes), then launch: `mame blitz2k` from a command line, or pick NFL Blitz 2000 Gold from the MAME menu. No checksum notice appears; the patcher marks the disk so MAME and frontends treat it as the original.
 
-Expected result: CHD Data SHA1 `f2a61cacd8552beb2df94b20a262f27234c78ebe` (file MD5 `136779c93424c8352ac789c7738f8a28`).
+Expected result: CHD Data SHA1 `f2a61cacd8552beb2df94b20a262f27234c78ebe` (file MD5 `3a251f8604947e989cae846a541980ef`).
 
 A successful run ends like this:
 
 ![Patch output ending in PASS](docs/images/patch_output.png)
 
 ## Notes
-- **MAME checksum warning at boot is expected.** Press a key or launch with -skip_gameinfo. A modded disk can never match the driver's hash.
-- **"DIFF CHD ERROR: Invalid parent".** Delete diff\blitz2k.dif in your MAME folder; it was created for the original disk.
+- **Delete your old diff file before the first launch.** MAME stores the game's disk writes in diff\blitz2k.dif (in your MAME folder, or wherever diff_directory points). A diff file created by the original game does not belong to the patched disk, and MAME will not reject it because the patched disk carries the original's SHA1. Delete it once before the first run. If you forget, the game may boot with stale data or show DIFF CHD ERROR.
 - **macOS "cannot be opened" warning.** The patch's programs are not notarized with Apple. PATCH.command clears the download flag itself, so normally nothing is needed; if macOS still blocks it, right-click PATCH.command and choose Open once.
 
 ## Build the patcher from source

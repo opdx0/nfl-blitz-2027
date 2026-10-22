@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -42,6 +43,38 @@ func runChdman(chdman string, args ...string) *exitErr {
 		return fail(4, "chdman %s failed: %v", args[0], err)
 	}
 	fmt.Fprintln(os.Stderr)
+	return nil
+}
+
+// origCHDSHA1 is the "SHA1" field of the original blitz2k.chd header. MAME trusts this
+// field instead of rehashing, so writing it makes the patched disk pass its audit.
+// The "Data SHA1" field (the one the PASS check uses) is left alone.
+const (
+	origCHDSHA1   = "e89b7fbd4b4a9854d47ae97493e0afffbd1f69e7"
+	chdSHA1Offset = 84
+)
+
+// markCHDHeader writes origCHDSHA1 into the CHD v5 header of path.
+func markCHDHeader(path string) *exitErr {
+	want, _ := hex.DecodeString(origCHDSHA1)
+	f, err := os.OpenFile(path, os.O_RDWR, 0)
+	if err != nil {
+		return fail(3, "cannot open %s to mark header: %v", path, err)
+	}
+	defer f.Close()
+	hdr := make([]byte, 16)
+	if _, err := f.ReadAt(hdr, 0); err != nil {
+		return fail(3, "cannot read CHD header of %s: %v", path, err)
+	}
+	if string(hdr[:8]) != "MComprHD" || binary.BigEndian.Uint32(hdr[12:16]) != 5 {
+		return fail(4, "%s is not a CHD v5 file (unexpected header); cannot mark it for MAME.", path)
+	}
+	if _, err := f.WriteAt(want, chdSHA1Offset); err != nil {
+		return fail(3, "cannot write CHD header of %s: %v", path, err)
+	}
+	if err := f.Sync(); err != nil {
+		return fail(3, "cannot flush CHD header of %s: %v", path, err)
+	}
 	return nil
 }
 
@@ -134,7 +167,7 @@ func run(args []string) *exitErr {
 	wantIn := hex.EncodeToString(h.pchd[:])
 	wantOut := hex.EncodeToString(h.tchd[:])
 
-	fmt.Println("== 1/5 checking original CHD")
+	fmt.Println("== 1/6 checking original CHD")
 	got, sha, e := chdmanDataSHA1(chdman, in)
 	if e != nil {
 		return e
@@ -166,21 +199,26 @@ func run(args []string) *exitErr {
 	defer os.RemoveAll(work)
 	raw := filepath.Join(work, "in.raw")
 
-	fmt.Println("\n== 2/5 extracting raw image (1-5 min depending on your system)")
+	fmt.Println("\n== 2/6 extracting raw image (1-5 min depending on your system)")
 	if e := runChdman(chdman, "extracthd", "-f", "-i", in, "-o", raw); e != nil {
 		return e
 	}
-	fmt.Println("== 3/5 applying and verifying patch")
+	fmt.Println("== 3/6 applying and verifying patch")
 	if e := apply([]string{raw, bpz, "--in-place"}); e != nil {
 		return e
 	}
-	fmt.Println("\n== 4/5 building CHD (1-5 min depending on your system)")
+	fmt.Println("\n== 4/6 building CHD (1-5 min depending on your system)")
 	if e := runChdman(chdman, "createhd", "-f", "-i", raw, "-o", out, "-c", "zlib", "-hs", "4096", "-chs", "784,255,63", "-ss", "512"); e != nil {
 		os.Remove(out)
 		return e
 	}
 	os.Remove(raw)
-	fmt.Println("== 5/5 verifying new CHD")
+	fmt.Println("== 5/6 marking header for MAME (original SHA1)")
+	if e := markCHDHeader(out); e != nil {
+		os.Remove(out)
+		return e
+	}
+	fmt.Println("== 6/6 verifying new CHD")
 	got, sha, e = chdmanDataSHA1(chdman, out)
 	if e != nil {
 		return e

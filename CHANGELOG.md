@@ -2,6 +2,13 @@
 
 All notable changes to NFL Blitz 2027. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.1] - 2026-10-21
+
+Build 1007a. The game content is identical to 1.0.0; only the CHD header and the patcher change.
+
+### Changed
+- The patcher now writes the original disk's SHA1 into the CHD header, so MAME boots without the checksum notice, passes the ROM audit, and launches from the MAME menu and frontends. The patch data is unchanged.
+
 ## [1.0.0] - 2026-10-06
 
 First public release (build 1006a). Everything below describes how NFL Blitz 2027 differs from the original **NFL Blitz 2000 Gold** arcade game (MAME blitz2k).
